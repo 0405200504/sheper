@@ -167,38 +167,37 @@
   }
 
   /* --------------------------------------------- vídeos verticais (autoplay) */
-  var videoItems = $$('[data-video]');
+  var videos = $$('[data-video] video');
 
   var play = function (video) {
+    if (reduce) return;
     var attempt = video.play();
     if (attempt && attempt.catch) attempt.catch(function () { /* autoplay bloqueado */ });
   };
 
-  /* O vídeo aparece assim que tem quadro, não quando entra na viewport — os
-     arquivos vêm com preload="auto", então nada fica preto esperando o scroll. */
+  /* O vídeo troca de lugar com o poster assim que tem o primeiro quadro. */
   var reveal = function (video) { video.classList.add('is-playing'); };
 
-  var videoObserver = 'IntersectionObserver' in window
-    ? new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          var video = $('video', entry.target);
-          if (!video) return;
-          if (entry.isIntersecting && !reduce) play(video);
-          else video.pause();
-        });
-      }, { threshold: 0.35 })
-    : null;
-
-  videoItems.forEach(function (item) {
-    var video = $('video', item);
-    if (!video) return;
-
+  videos.forEach(function (video) {
     if (video.readyState >= 2) reveal(video);
     else video.addEventListener('loadeddata', function () { reveal(video); });
-
-    if (videoObserver) videoObserver.observe(item);
-    else if (!reduce) play(video);
+    play(video);
   });
+
+  if (videos.length) {
+    /* Os quatro rodam em loop o tempo todo — nada pausa ao sair da viewport.
+       Só retomamos depois de a aba voltar do segundo plano, ou no primeiro
+       toque, para o caso de o navegador ter barrado o autoplay. */
+    var playAll = function () { videos.forEach(play); };
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) playAll();
+    });
+
+    ['pointerdown', 'touchstart', 'keydown'].forEach(function (evt) {
+      window.addEventListener(evt, playAll, { once: true, passive: true });
+    });
+  }
 
   /* --------------------------------------------------------------- lightbox */
   var gallery = $('#gallery');

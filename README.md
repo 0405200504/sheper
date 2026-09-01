@@ -20,7 +20,7 @@ Ou abra o `index.html` direto no navegador.
 | `css/styles.css` | Design system: tokens, seções invertidas, componentes, responsivo |
 | `js/main.js` | Header fixo, menu mobile, reveal on scroll, contadores, carrossel de cases, autoplay dos vídeos, lightbox |
 | `assets/logo/` | Logo em PNG transparente (lockup, símbolo e wordmark, preto e branco) + favicons |
-| `assets/img/` | 35 fotos otimizadas (máx. 1500px, JPEG progressivo) + `fundadores.png`, o recorte do Juan e do Sátiro com contorno de adesivo e fundo transparente |
+| `assets/img/` | 35 fotos otimizadas (máx. 1500px, JPEG progressivo) + `fundadores.png`, o recorte do Juan e do Satiro com contorno de adesivo e fundo transparente |
 | `assets/video/` | 4 vídeos verticais comprimidos (360×640) + posters |
 | `vercel.json` | Cache dos assets e headers básicos |
 
@@ -56,7 +56,7 @@ O que está publicado e de onde veio:
 | 35,5M views · 303 vídeos · 117,2K de média | Print do analytics da `#poraiedit` no TikTok |
 | 19.041.473 em "Por Aí" · 7,4M ouvintes | Print do perfil do DJ Topo no Spotify |
 | 2.367.384 em "Quer Mídia" · 1M ouvintes | Print do perfil do Boschin no Spotify |
-| 45,5K curtidas · 19,3K compartilhamentos | Print de um edit orgânico no TikTok |
+| 1M de curtidas · 45,5K salvos · 19,3K compartilhamentos | Print de um edit orgânico no TikTok |
 | +21M streams · 8,4M ouvintes | Soma dos dois prints do Spotify |
 | **+187M visualizações** | **Informado pela Sheper — o print da TEARSBR não estava no Drive.** Vale anexar o print antes de publicar, já que é o número mais forte da página. |
 | +10 marcas e artistas | Contagem dos clientes citados no material |
