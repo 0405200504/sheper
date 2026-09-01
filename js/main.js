@@ -199,6 +199,72 @@
     });
   }
 
+  /* -------------------------------------------------------------- formulário */
+  var form = $('#leadForm');
+
+  if (form) {
+    var statusEl = $('#formStatus');
+    var submitBtn = $('#formSubmit');
+    var submitLabel = $('.form__label', submitBtn);
+    var endpoint = (form.getAttribute('data-endpoint') || '').trim();
+    var configurado = endpoint && endpoint.indexOf('COLE_') !== 0;
+
+    var setStatus = function (tipo, texto) {
+      statusEl.className = 'form__status is-on ' + (tipo === 'ok' ? 'is-ok' : 'is-err');
+      statusEl.textContent = texto;
+    };
+
+    var travar = function (travado, texto) {
+      submitBtn.disabled = travado;
+      submitLabel.textContent = texto;
+    };
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      if (!form.reportValidity()) return;
+
+      if (!configurado) {
+        setStatus('err', 'O formulário ainda não foi ligado à planilha. Quem cuida do site precisa colar a URL do Apps Script em data-endpoint (o passo a passo está no README).');
+        return;
+      }
+
+      var dados = {};
+      new FormData(form).forEach(function (valor, chave) { dados[chave] = valor; });
+
+      /* id próprio: se a resposta se perder no caminho e o envio for repetido,
+         o Apps Script reconhece e não grava a mesma pessoa duas vezes. */
+      dados.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      dados.pagina = location.href;
+
+      var corpo = JSON.stringify(dados);
+      var opcoes = { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: corpo };
+
+      travar(true, 'Enviando');
+      statusEl.className = 'form__status';
+
+      var deuCerto = function () {
+        travar(false, 'Enviar aplicação');
+        form.reset();
+        setStatus('ok', 'Recebido. A gente lê e responde em até 24h úteis, no e-mail e no WhatsApp que você deixou.');
+      };
+
+      fetch(endpoint, opcoes)
+        .then(deuCerto)
+        .catch(function () {
+          /* O Apps Script às vezes barra a leitura da resposta por CORS mesmo
+             tendo gravado a linha. Reenviamos sem ler a resposta: o id acima
+             garante que não vira registro duplicado. */
+          opcoes.mode = 'no-cors';
+          return fetch(endpoint, opcoes).then(deuCerto);
+        })
+        .catch(function () {
+          travar(false, 'Enviar aplicação');
+          setStatus('err', 'Não conseguimos enviar agora. Tenta de novo em instantes ou chama a gente no Instagram.');
+        });
+    });
+  }
+
   /* --------------------------------------------------------------- lightbox */
   var gallery = $('#gallery');
   var lb      = $('#lightbox');

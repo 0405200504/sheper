@@ -22,6 +22,7 @@ Ou abra o `index.html` direto no navegador.
 | `assets/logo/` | Logo em PNG transparente (lockup, símbolo e wordmark, preto e branco) + favicons |
 | `assets/img/` | 35 fotos otimizadas (máx. 1500px, JPEG progressivo) + `fundadores.png`, o recorte do Juan e do Satiro com contorno de adesivo e fundo transparente |
 | `assets/video/` | 4 vídeos verticais comprimidos (360×640) + posters |
+| `apps-script/Codigo.gs` | Código que recebe o formulário e grava na planilha do Google |
 | `vercel.json` | Cache dos assets e headers básicos |
 
 ## Design
@@ -36,16 +37,38 @@ manuscrita das seções) e **JetBrains Mono** (rótulos e números). Todas via G
 
 ## ⚠️ Antes de publicar
 
-Três placeholders precisam ser trocados. Todos estão marcados com comentário
-`<!-- TROCAR: ... -->` no `index.html`:
+### 1. Ligar o formulário à planilha (obrigatório)
 
-1. **WhatsApp** — 6 ocorrências de `https://wa.me/55XXXXXXXXXXX`.
-   Troque tudo de uma vez:
-   ```bash
-   sed -i '' 's/55XXXXXXXXXXX/5511987654321/g' index.html
-   ```
-2. **Instagram** — `https://instagram.com/USUARIO` no rodapé.
-3. **E-mail** — `contato@EXEMPLO.com` no rodapé.
+O formulário só grava depois que você criar a planilha e publicar o script. Leva
+uns 5 minutos e não custa nada:
+
+1. Crie uma planilha nova no Google Sheets.
+2. Nela, vá em **Extensões > Apps Script**.
+3. Apague o que estiver lá e cole o conteúdo de `apps-script/Codigo.gs`.
+4. Se quiser aviso por e-mail a cada aplicação, preencha `AVISAR_EM` no topo do
+   arquivo. Deixe vazio para não receber nada.
+5. **Implantar > Nova implantação > Aplicativo da Web**, com:
+   - Executar como: **Eu**
+   - Quem pode acessar: **Qualquer pessoa**
+6. Autorize quando o Google pedir e copie a URL que termina em `/exec`.
+7. No `index.html`, cole essa URL no `data-endpoint` do `<form id="leadForm">`.
+
+Para conferir se ficou de pé, abra a URL `/exec` no navegador: deve responder
+`{"ok":true,"servico":"sheper-formulario"}`.
+
+Enquanto o `data-endpoint` estiver com o texto `COLE_A_URL_DO_APPS_SCRIPT_AQUI`,
+quem enviar o formulário vê uma mensagem avisando que ele ainda não está ligado,
+em vez de um falso "recebido".
+
+Se um dia mudar o `Codigo.gs`, é preciso implantar de novo (**Implantar >
+Gerenciar implantações > editar > Nova versão**). Só salvar não publica.
+
+### 2. Trocar os dois placeholders do rodapé
+
+Ambos marcados com `<!-- TROCAR: ... -->` no `index.html`:
+
+- **Instagram**: `https://instagram.com/USUARIO`
+- **E-mail**: `contato@EXEMPLO.com`
 
 ## Sobre os números da página
 
@@ -85,3 +108,23 @@ a que fica mais embaixo na página.
 Os vídeos aparecem no lugar do poster assim que têm o primeiro quadro (`loadeddata`),
 não quando entram na viewport. O IntersectionObserver só dá play e pause, para não
 deixar quatro vídeos rodando fora da tela.
+
+## Como o formulário se comporta
+
+Nove perguntas, das quais oito são obrigatórias. As três de múltipla escolha
+(o que precisa, quando quer começar, investimento previsto) existem para
+qualificar antes da primeira conversa, e não para filtrar por preço: a legenda
+abaixo do campo de investimento diz isso em voz alta, porque perguntar orçamento
+sem explicar por quê espanta bom lead.
+
+Três detalhes de implementação que valem saber:
+
+- **Armadilha de bot.** Existe um campo `empresa` escondido por CSS. Humano nunca
+  vê nem preenche; robô preenche tudo. Se vier preenchido, o script responde
+  "ok" e descarta em silêncio, para o robô não perceber que foi barrado.
+- **Reenvio sem duplicar.** O Apps Script às vezes grava a linha mas bloqueia a
+  leitura da resposta por CORS. Quando isso acontece o site reenvia sem ler a
+  resposta, e cada envio carrega um `id` próprio que o script confere antes de
+  gravar. Assim o reenvio nunca vira duas linhas da mesma pessoa.
+- **Fila de escrita.** O script usa `LockService`, então dois envios simultâneos
+  esperam a vez em vez de brigarem pela mesma linha.

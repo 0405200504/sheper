@@ -359,14 +359,14 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   transform: rotate(-4deg) scale(1.18);
-  opacity: .5;
+  opacity: .74;
 }
 .hero__wall figure { margin: 0; overflow: hidden; border-radius: 8px; }
 .hero__wall img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(1) contrast(1.16) brightness(.72);
+  filter: grayscale(1) contrast(1.1) brightness(.86);
 }
 .hero__wall .col {
   display: grid;
@@ -380,9 +380,11 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   position: absolute;
   inset: 0;
   z-index: -1;
+  /* Véu mais leve, mas ainda escuro o bastante atrás do texto: o gradiente
+     radial segura o contraste do lado esquerdo, onde fica a headline. */
   background:
-    radial-gradient(115% 78% at 20% 42%, rgba(10,10,10,.94) 0%, rgba(10,10,10,.78) 42%, rgba(10,10,10,.52) 72%, rgba(10,10,10,.7) 100%),
-    linear-gradient(180deg, rgba(10,10,10,.92) 0%, rgba(10,10,10,.28) 34%, rgba(10,10,10,.82) 78%, var(--ink) 100%);
+    radial-gradient(112% 76% at 18% 44%, rgba(10,10,10,.9) 0%, rgba(10,10,10,.68) 40%, rgba(10,10,10,.3) 72%, rgba(10,10,10,.42) 100%),
+    linear-gradient(180deg, rgba(10,10,10,.86) 0%, rgba(10,10,10,.12) 32%, rgba(10,10,10,.6) 76%, var(--ink) 100%);
 }
 
 .hero__inner { position: relative; max-width: 900px; }
@@ -896,7 +898,7 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   color: var(--fg-faint);
   margin-bottom: 16px;
 }
-.step h4 {
+.step h3 {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.16rem;
@@ -1079,32 +1081,137 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 }
 
 /* --------------------------------------------------------------------------
-   CTA final
+   Formulário
    -------------------------------------------------------------------------- */
 
-.cta { text-align: center; }
-.cta__mark {
-  width: clamp(64px, 9vw, 96px);
-  height: auto;
-  margin: 0 auto 30px;
+.contato {
+  display: grid;
+  gap: clamp(48px, 6vw, 84px);
+  align-items: start;
 }
-.cta h2 { margin-bottom: 20px; }
-.cta .lede { margin-inline: auto; text-align: center; }
-.cta__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  justify-content: center;
-  margin-top: 38px;
+@media (min-width: 960px) { .contato { grid-template-columns: 1fr 1.15fr; } }
+
+.contato__intro h2 { margin-bottom: 22px; }
+.contato__intro .lede { margin-bottom: 40px; }
+
+.passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.passos li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 18px;
+  padding-block: 22px;
+  border-top: 1px solid var(--line);
 }
-.cta__note {
-  margin-top: 26px;
+.passos li:last-child { border-bottom: 1px solid var(--line); }
+.passos b {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  font-weight: 500;
+  letter-spacing: .16em;
+  color: var(--fg-faint);
+  padding-top: .35em;
+}
+.passos h3 {
+  margin: 0 0 5px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.06rem;
+  letter-spacing: -0.025em;
+}
+.passos p { grid-column: 2; margin: 0; font-size: .92rem; color: var(--fg-mute); }
+
+.form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: clamp(26px, 3.4vw, 42px);
+}
+
+.form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 22px);
+}
+@media (max-width: 620px) { .form__grid { grid-template-columns: 1fr; } }
+
+.field { margin: 0; display: grid; gap: 8px; }
+.field--full { grid-column: 1 / -1; }
+.field--trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.field label {
   font-family: var(--font-mono);
   font-size: .66rem;
-  letter-spacing: .16em;
+  font-weight: 500;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--fg-faint);
+  color: var(--fg-mute);
 }
+.field .req { color: var(--fg); }
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: .97rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+  appearance: none;
+  -webkit-appearance: none;
+}
+.field textarea { resize: vertical; min-height: 118px; line-height: 1.55; }
+
+.field select {
+  /* seta desenhada, pra não herdar o widget cinza do sistema */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%230A0A0A' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 42px;
+  cursor: pointer;
+}
+.field select:invalid { color: var(--fg-faint); }
+
+.field input::placeholder,
+.field textarea::placeholder { color: var(--fg-faint); }
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--fg);
+  box-shadow: 0 0 0 3px rgba(10, 10, 10, .1);
+}
+.field input:user-invalid,
+.field select:user-invalid,
+.field textarea:user-invalid { border-color: #B4231F; }
+
+.hint { font-size: .78rem; color: var(--fg-faint); line-height: 1.5; }
+
+.form__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin-top: clamp(24px, 3vw, 32px);
+}
+.form__foot .btn[disabled] { opacity: .55; cursor: progress; transform: none; }
+.form__note { margin: 0; font-size: .8rem; color: var(--fg-faint); max-width: 34ch; }
+
+.form__status {
+  margin: 20px 0 0;
+  padding: 15px 18px;
+  border-radius: 12px;
+  font-size: .92rem;
+  line-height: 1.55;
+  display: none;
+}
+.form__status.is-on { display: block; }
+.form__status.is-ok   { background: rgba(10, 10, 10, .06); border: 1px solid var(--line); color: var(--fg); }
+.form__status.is-err  { background: rgba(180, 35, 31, .08); border: 1px solid rgba(180, 35, 31, .34); color: #8E1B18; }
 
 /* --------------------------------------------------------------------------
    Footer
@@ -1171,7 +1278,7 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   .nav, .header__cta .btn { display: none; }
   .burger { display: flex; }
   .reel { grid-template-columns: repeat(2, 1fr); }
-  .hero__wall { grid-template-columns: repeat(4, 1fr); opacity: .42; }
+  .hero__wall { grid-template-columns: repeat(4, 1fr); opacity: .6; }
 }
 
 @media (max-width: 640px) {
