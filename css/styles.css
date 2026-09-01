@@ -53,6 +53,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
 }
 
 body {
@@ -65,7 +66,7 @@ body {
   letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body.is-locked { overflow: hidden; }
@@ -386,24 +387,33 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 
 .hero__inner { position: relative; max-width: 900px; }
 
-.kicker {
+/* Ficha técnica do hero: fio + três micro-colunas, como crédito de disco */
+.spec {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  font-family: var(--font-mono);
-  font-size: .72rem;
-  font-weight: 500;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: rgba(244, 242, 238, .62);
-  margin: 0 0 28px;
+  flex-wrap: wrap;
+  gap: 22px clamp(30px, 4.4vw, 62px);
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 36px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(244, 242, 238, .26);
 }
-.kicker::before {
-  content: "";
-  width: 46px;
-  height: 1px;
-  background: rgba(244, 242, 238, .38);
-  flex: none;
+.spec > div { display: grid; gap: 5px; }
+.spec dt {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  font-weight: 500;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(244, 242, 238, .4);
+}
+.spec dd {
+  margin: 0;
+  font-size: .94rem;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: rgba(244, 242, 238, .92);
+  white-space: nowrap;
 }
 
 .hero h1 { margin-bottom: 26px; }
@@ -515,14 +525,17 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 }
 
 .rail {
+  /* Alinha o primeiro card com a coluna de texto do .wrap sem margem negativa:
+     margem negativa faria a caixa do rail medir mais que a viewport e a página
+     inteira escorregaria pro lado no mobile. */
+  --rail-pad: max(var(--gutter), calc((100% - var(--max)) / 2 + var(--gutter)));
   display: flex;
   gap: clamp(14px, 1.8vw, 22px);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--gutter);
-  padding-inline: var(--gutter);
+  scroll-padding-inline: var(--rail-pad);
+  padding-inline: var(--rail-pad);
   padding-bottom: 6px;
-  margin-inline: calc(var(--gutter) * -1);
   scrollbar-width: none;
 }
 .rail::-webkit-scrollbar { display: none; }
@@ -554,7 +567,7 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgba(10,10,10,.62) 0%, rgba(10,10,10,.05) 34%, rgba(10,10,10,.72) 72%, rgba(10,10,10,.95) 100%);
+  background: linear-gradient(180deg, rgba(10,10,10,.66) 0%, rgba(10,10,10,.06) 28%, rgba(10,10,10,.5) 52%, rgba(10,10,10,.88) 76%, rgba(10,10,10,.97) 100%);
 }
 
 .case__body {
@@ -1173,6 +1186,14 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   .lightbox__prev { left: 24%; }
   .lightbox__next { right: 24%; }
   .lightbox__cap { bottom: 84px; }
+}
+
+/* Em tela de toque não existe :hover — então a galeria e as capas dos cases
+   já entram coloridas, e a legenda da galeria já entra visível. */
+@media (hover: none), (max-width: 640px) {
+  .gallery img { filter: none; }
+  .gallery figcaption { opacity: 1; transform: none; }
+  .case__media img { filter: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
