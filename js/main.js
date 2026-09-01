@@ -169,29 +169,36 @@
   /* --------------------------------------------- vídeos verticais (autoplay) */
   var videoItems = $$('[data-video]');
 
-  if (videoItems.length && 'IntersectionObserver' in window) {
-    var play = function (video) {
-      var attempt = video.play();
-      if (attempt && attempt.catch) attempt.catch(function () { /* autoplay bloqueado */ });
-      video.classList.add('is-playing');
-    };
+  var play = function (video) {
+    var attempt = video.play();
+    if (attempt && attempt.catch) attempt.catch(function () { /* autoplay bloqueado */ });
+  };
 
-    var videoObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        var video = $('video', entry.target);
-        if (!video) return;
-        if (entry.isIntersecting && !reduce) {
-          if (video.preload === 'none') video.preload = 'auto';
-          play(video);
-        } else {
-          video.pause();
-          video.classList.remove('is-playing');
-        }
-      });
-    }, { threshold: 0.35 });
+  /* O vídeo aparece assim que tem quadro, não quando entra na viewport — os
+     arquivos vêm com preload="auto", então nada fica preto esperando o scroll. */
+  var reveal = function (video) { video.classList.add('is-playing'); };
 
-    videoItems.forEach(function (item) { videoObserver.observe(item); });
-  }
+  var videoObserver = 'IntersectionObserver' in window
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          var video = $('video', entry.target);
+          if (!video) return;
+          if (entry.isIntersecting && !reduce) play(video);
+          else video.pause();
+        });
+      }, { threshold: 0.35 })
+    : null;
+
+  videoItems.forEach(function (item) {
+    var video = $('video', item);
+    if (!video) return;
+
+    if (video.readyState >= 2) reveal(video);
+    else video.addEventListener('loadeddata', function () { reveal(video); });
+
+    if (videoObserver) videoObserver.observe(item);
+    else if (!reduce) play(video);
+  });
 
   /* --------------------------------------------------------------- lightbox */
   var gallery = $('#gallery');

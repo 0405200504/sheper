@@ -26,7 +26,7 @@
   --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Ritmo */
-  --gutter: clamp(20px, 5vw, 64px);
+  --gutter: clamp(28px, 5vw, 64px);
   --max: 1240px;
   --section-y: clamp(72px, 11vw, 156px);
   --r: 18px;
@@ -386,37 +386,24 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 
 .hero__inner { position: relative; max-width: 900px; }
 
-.pill {
-  display: inline-flex;
+.kicker {
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 18px 9px 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(244, 242, 238, .05);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  gap: 14px;
   font-family: var(--font-mono);
-  font-size: .66rem;
+  font-size: .72rem;
   font-weight: 500;
-  letter-spacing: .2em;
+  letter-spacing: .13em;
   text-transform: uppercase;
-  color: rgba(244, 242, 238, .82);
-  margin-bottom: 30px;
+  color: rgba(244, 242, 238, .62);
+  margin: 0 0 28px;
 }
-.pill::before {
+.kicker::before {
   content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--paper);
-  box-shadow: 0 0 0 0 rgba(244, 242, 238, .55);
-  animation: pulse 2.6s infinite;
-}
-@keyframes pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(244, 242, 238, .5); }
-  70%  { box-shadow: 0 0 0 9px rgba(244, 242, 238, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(244, 242, 238, 0); }
+  width: 46px;
+  height: 1px;
+  background: rgba(244, 242, 238, .38);
+  flex: none;
 }
 
 .hero h1 { margin-bottom: 26px; }
@@ -573,15 +560,15 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 .case__body {
   position: absolute;
   inset: auto 0 0 0;
-  padding: clamp(22px, 3vw, 34px);
+  padding: clamp(26px, 3vw, 34px);
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .case__tag {
   position: absolute;
-  top: clamp(20px, 3vw, 28px);
-  left: clamp(22px, 3vw, 34px);
+  top: clamp(24px, 3vw, 28px);
+  left: clamp(26px, 3vw, 34px);
   font-family: var(--font-mono);
   font-size: .66rem;
   letter-spacing: .2em;
@@ -686,7 +673,7 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 .reel__cap {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  padding: 16px;
+  padding: 16px 18px;
   z-index: 2;
   background: linear-gradient(transparent, rgba(10,10,10,.88));
   font-family: var(--font-mono);
@@ -708,7 +695,7 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 .stat {
   background: var(--surface);
   border-radius: var(--r);
-  padding: clamp(26px, 3.4vw, 40px) clamp(20px, 2.4vw, 28px);
+  padding: clamp(30px, 3.4vw, 40px) clamp(26px, 2.4vw, 28px);
   text-align: center;
   border: 1px solid var(--line-soft);
 }
@@ -754,7 +741,7 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 }
 .proof__wide img { width: 100%; height: auto; }
 .proof__wide figcaption {
-  padding: 16px clamp(16px, 2.4vw, 24px);
+  padding: 16px clamp(22px, 2.4vw, 24px);
   border-top: 1px solid var(--line);
   font-family: var(--font-mono);
   font-size: .68rem;
@@ -764,42 +751,46 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 }
 
 .proof__phones {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(14px, 2vw, 22px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(18px, 2.6vw, 34px);
 }
 
-.phone { margin: 0; }
-.phone__screen {
-  aspect-ratio: 9 / 17;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  overflow: hidden;
-  background: #000;
-  display: grid;
-  place-items: center;
-  padding: 8px;
-}
-.phone__screen img {
-  width: auto;
-  height: 100%;
+/* Altura fixa e largura livre: as três screenshots alinham em cima e embaixo
+   sem barra preta, cada uma no seu proporção original. */
+.phone {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   max-width: 100%;
-  object-fit: contain;
-  border-radius: 14px;
+}
+.phone img {
+  height: clamp(360px, 36vw, 560px);
+  width: auto;
+  max-width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #000;
 }
 .phone figcaption {
-  margin-top: 14px;
+  margin-top: 16px;
+  text-align: center;
   font-family: var(--font-mono);
   font-size: .66rem;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--fg-mute);
-  line-height: 1.6;
+  line-height: 1.7;
 }
 .phone figcaption b { color: var(--fg); font-weight: 500; }
 
 @media (max-width: 720px) {
-  .proof__phones { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; }
+  .phone img { height: auto; width: 100%; max-width: 300px; }
+}
+
 }
 
 /* --------------------------------------------------------------------------
@@ -812,7 +803,7 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--surface);
-  padding: clamp(24px, 3vw, 34px) clamp(22px, 3vw, 38px);
+  padding: clamp(28px, 3vw, 34px) clamp(26px, 3vw, 38px);
   display: grid;
   grid-template-columns: auto 1fr;
   column-gap: clamp(16px, 2.4vw, 30px);
@@ -917,13 +908,21 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   border-radius: var(--r-lg);
   overflow: hidden;
   border: 1px solid var(--line);
-  background: var(--ink-2);
+  /* papel milimetrado por baixo do recorte, pra dar chão ao adesivo */
+  background:
+    linear-gradient(rgba(244, 242, 238, .05) 1px, transparent 1px) 0 0 / 100% 44px,
+    linear-gradient(90deg, rgba(244, 242, 238, .05) 1px, transparent 1px) 0 0 / 44px 100%,
+    radial-gradient(130% 95% at 50% 0%, #1B1B1B 0%, #0D0D0D 72%);
+  aspect-ratio: 1.12;
+  padding: clamp(26px, 3.4vw, 40px) clamp(20px, 2.8vw, 34px) 0;
+  display: flex;
+  align-items: flex-end;
 }
 .about__art img { width: 100%; height: auto; }
 .about__badge {
   position: absolute;
   right: 16px;
-  bottom: 16px;
+  top: 16px;
   background: var(--ink);
   border: 1px solid var(--line);
   border-radius: 14px;

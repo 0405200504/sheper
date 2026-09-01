@@ -20,7 +20,7 @@ Ou abra o `index.html` direto no navegador.
 | `css/styles.css` | Design system: tokens, seções invertidas, componentes, responsivo |
 | `js/main.js` | Header fixo, menu mobile, reveal on scroll, contadores, carrossel de cases, autoplay dos vídeos, lightbox |
 | `assets/logo/` | Logo em PNG transparente (lockup, símbolo e wordmark, preto e branco) + favicons |
-| `assets/img/` | 36 fotos otimizadas (máx. 1500px, JPEG progressivo) |
+| `assets/img/` | 35 fotos otimizadas (máx. 1500px, JPEG progressivo) + `fundadores.png`, o recorte do Juan e do Sátiro com contorno de adesivo e fundo transparente |
 | `assets/video/` | 4 vídeos verticais comprimidos (360×640) + posters |
 | `vercel.json` | Cache dos assets e headers básicos |
 
@@ -66,8 +66,6 @@ O que está publicado e de onde veio:
 O Drive tinha pastas de briefing sem arquivo dentro. Se esse conteúdo aparecer, dá pra
 enriquecer a página:
 
-- **Fotos do Juan e do Sátiro** — hoje a seção "Quem somos" usa só a ilustração da
-  ovelha negra. Com foto dos dois ela fica muito mais forte.
 - **Print dos 187M views da TEARSBR** — ver tabela acima.
 - **Abbot × LX — "O Plano"** e **audiovisual do Tiago** — pastas vazias; os dois
   aparecem hoje só como nome no marquee.
@@ -75,3 +73,15 @@ enriquecer a página:
   reais fica mais próximo da referência.
 - **Depoimentos de clientes** — não havia nenhum no material, então a seção não foi
   criada. Com 2 ou 3 depoimentos reais, o lugar natural é entre "Processo" e "Quem somos".
+
+## Carregamento
+
+Nenhuma imagem usa `loading="lazy"` e os quatro vídeos vêm com `preload="auto"` e
+`autoplay`: tudo é baixado assim que a página abre, sem pop-in durante o scroll. Em
+troca, a primeira carga puxa cerca de 30MB — se um dia isso pesar demais em 4G, o
+caminho é devolver o `loading="lazy"` só para a galeria, que é a parte mais pesada e
+a que fica mais embaixo na página.
+
+Os vídeos aparecem no lugar do poster assim que têm o primeiro quadro (`loadeddata`),
+não quando entram na viewport. O IntersectionObserver só dá play e pause, para não
+deixar quatro vídeos rodando fora da tela.
