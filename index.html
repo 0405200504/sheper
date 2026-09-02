@@ -69,6 +69,11 @@
     d.head.appendChild(l);
   });
 
+  var j = d.createElement('link');
+  j.rel = 'preload'; j.as = 'fetch'; j.crossOrigin = 'anonymous';
+  j.href = 'assets/logo/mark-shape.json';
+  d.head.appendChild(j);
+
   var s = d.createElement('script');
   s.type = 'module'; s.src = 'js/intro.js';
   d.head.appendChild(s);
@@ -93,7 +98,11 @@
       <p>A gente não segue o rebanho</p>
     </div>
   </div>
-  <button class="intro__skip" id="introSkip" type="button">Pular abertura</button>
+  <button class="intro__sound" id="introSound" type="button" aria-pressed="false">
+    <span class="intro__sound-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <span class="intro__sound-txt">Ativar som</span>
+  </button>
+  <button class="intro__skip" id="introSkip" type="button">Pular<span> abertura</span></button>
 </div>
 <div class="intro-flash" id="introFlash" aria-hidden="true"></div>
 

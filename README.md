@@ -56,6 +56,28 @@ Como funciona, em resumo:
   aplicados no vertex shader. Nada de mil objetos: é uma malha só.
 - **Pós-processamento próprio.** Bloom em duas passadas, tonemap ACES, aberração
   cromática, vinheta e grão — tudo em `js/intro.js`, sem os módulos de exemplo.
+- **Som sintetizado.** Nada é baixado: sub grave que cresce, cacos metálicos
+  adensando, o baque do encaixe com cauda inarmônica e um riser na entrega, tudo
+  gerado em Web Audio e agendado a partir da mesma linha do tempo da animação.
+
+### Som
+
+O navegador só libera áudio depois de um gesto do visitante, então a abertura tenta
+tocar e, se for barrada, oferece o botão **Ativar som** no canto inferior esquerdo.
+Tocando nele a trilha entra no ponto em que a animação está — o que já passou não
+toca de novo. A escolha fica guardada no `localStorage` (`sheper:som`), então quem
+ligou uma vez volta a ouvir nas próximas visitas.
+
+### No celular
+
+- A coreografia é a mesma, mas roda ~30% mais rápida (`RATE`), então a abertura dura
+  cerca de 2,8s em vez de 3,6s.
+- Perfil mais leve: metade da resolução nos mapas e no HDRI, sem verniz nem mapa de
+  rugosidade (menos shader para compilar), sem MSAA, uma passada de bloom, menos
+  poeira e `devicePixelRatio` limitado a 1,35.
+- Se ainda assim os quadros vierem lentos, a abertura mede as primeiras dezenas de
+  frames e **corta qualidade sozinha** — derruba resolução e bloom sem interromper
+  a cena — em vez de deixar a animação arrastando.
 
 **Quando ela não roda** (e a página abre direto, sem baixar nada da abertura):
 
@@ -65,8 +87,8 @@ Como funciona, em resumo:
 - se o three.js ou o JSON do contorno falharem — há um cronômetro de socorro que
   entrega a página em ~2,4s.
 
-O visitante pode pular a qualquer momento: botão **Pular abertura**, clique, `Esc`,
-espaço, scroll ou swipe.
+O visitante pode pular a qualquer momento: botão **Pular**, clique, `Esc`, espaço,
+scroll ou swipe. Os botões de pular e de som não disparam o pulo.
 
 **Para desligar de vez:** apague o bloco `<script>` da abertura no fim do `<head>` do
 `index.html`. O resto da página não depende dele.

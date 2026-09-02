@@ -1416,6 +1416,53 @@ html.intro-on .intro.is-out { opacity: 0; }
 }
 .intro__skip:hover { color: var(--paper); border-color: rgba(244, 242, 238, .5); }
 
+.intro__sound {
+  position: absolute;
+  left: clamp(20px, 4vw, 40px);
+  bottom: clamp(20px, 4vw, 40px);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border: 1px solid rgba(244, 242, 238, .2);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(244, 242, 238, .62);
+  background: rgba(10, 10, 10, .3);
+  backdrop-filter: blur(6px);
+  animation: introKick .7s var(--ease) 1.1s backwards;
+  transition: color .25s var(--ease), border-color .25s var(--ease);
+}
+.intro__sound:hover { color: var(--paper); border-color: rgba(244, 242, 238, .5); }
+.intro__sound.is-on { color: var(--paper); border-color: rgba(244, 242, 238, .42); }
+
+/* quatro barrinhas: paradas quando o som está mudo, dançando quando toca */
+.intro__sound-ico {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+}
+.intro__sound-ico i {
+  width: 2px;
+  height: 3px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: height .25s var(--ease);
+}
+.intro__sound.is-on .intro__sound-ico i { animation: introBars .9s ease-in-out infinite; }
+.intro__sound.is-on .intro__sound-ico i:nth-child(2) { animation-delay: .16s; }
+.intro__sound.is-on .intro__sound-ico i:nth-child(3) { animation-delay: .33s; }
+.intro__sound.is-on .intro__sound-ico i:nth-child(4) { animation-delay: .48s; }
+@keyframes introBars {
+  0%, 100% { height: 3px; }
+  50%      { height: 11px; }
+}
+
 /* O estouro de luz vive fora da abertura: ele sobrevive ao canvas e entrega
    a página por baixo. */
 html.intro-on .intro-flash,
@@ -1449,4 +1496,9 @@ html.intro-done .hero__wall { animation: introRise 1.2s var(--ease) backwards; }
 
 @media (max-width: 640px) {
   .intro__kick span:last-child { display: none; }
+  .intro__sound-txt { display: none; }
+  .intro__sound { padding: 10px 13px; }
+  .intro__skip span { display: none; }
+  /* a assinatura sobe para não disputar espaço com os dois botões */
+  .intro__sign { padding-bottom: 52px; }
 }

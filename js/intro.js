@@ -11,6 +11,26 @@ window.__sheperIntroBooting = true;
 var root = document.documentElement;
 var overlay = null;
 
+/* Aparelho modesto: menos resolução, menos passes, menos shader para compilar.
+   O que decide não é a largura da tela, é o que costuma vir junto com ela. */
+var LOW = Math.min(window.innerWidth, window.innerHeight) < 760 ||
+          (navigator.hardwareConcurrency || 8) <= 4;
+
+/* A abertura fica mais curta no celular: mesma coreografia, passo mais rápido. */
+var RATE = LOW ? 1.3 : 1;
+
+/* O instante da entrega, em segundos de animação. Precisa estar declarado aqui
+   em cima: se o documento já terminou de carregar quando este módulo roda,
+   boot() começa na linha seguinte e não enxerga atribuição nenhuma feita
+   depois dela. */
+var OUT_BEAT = 3.05;
+
+/* O contorno já sai buscando aqui, em paralelo com o three e com o estúdio.
+   Quando o renderer estiver de pé, ele quase sempre já chegou. */
+var shapeReq = fetch('assets/logo/mark-shape.json', { credentials: 'omit' })
+  .then(function (r) { return r.json(); })
+  .catch(function () { return null; });
+
 function start() {
   overlay = document.getElementById('intro');
   if (!overlay || !root.classList.contains('intro-on')) return;
@@ -40,7 +60,7 @@ function kill() {
    É isso que dá o brilho longo e o contraste de cromo — não dá para fingir
    com um gradiente LDR.                                                     */
 function studioEnvironment(renderer) {
-  var W = 512, H = 256;
+  var W = LOW ? 256 : 512, H = LOW ? 128 : 256;
   var data = new Float32Array(W * H * 4);
 
   /* [theta, phi, meia-altura, meia-largura, intensidade, r, g, b] */
@@ -107,7 +127,7 @@ function studioEnvironment(renderer) {
    estampada) com riscos finos de polimento; dele saem o normal e o mapa de
    rugosidade. É o que faz a luz escorrer pela peça em vez de assentar.     */
 function scratchMaps() {
-  var S = 256;
+  var S = LOW ? 128 : 256;
   var TAU = Math.PI * 2;
 
   /* riscos primeiro, num canvas que fecha nas bordas */
@@ -126,7 +146,7 @@ function scratchMaps() {
   };
 
   ctx.lineWidth = 1;
-  for (var i = 0; i < 520; i++) {
+  for (var i = 0, nStroke = LOW ? 260 : 520; i < nStroke; i++) {
     (function () {
       var x0 = Math.random() * S, y0 = Math.random() * S;
       var len = 12 + Math.random() * 110;
@@ -222,13 +242,222 @@ function radialTexture(inner, stops) {
   return t;
 }
 
+/* ================================================================== som
+   Nada é baixado: o efeito é sintetizado na hora. Um sub que cresce, cacos
+   de metal batendo enquanto a peça se junta, o baque do encaixe com a cauda
+   ressoando e um riser que entrega a página. Os tempos vêm da mesma linha
+   do tempo da animação, então som e imagem nunca saem de sincronia.        */
+function introSound() {
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+
+  var ctx;
+  try { ctx = new AC(); } catch (e) { return null; }
+
+  var master = ctx.createGain();
+  master.gain.value = 0.0001;
+
+  /* um limitador leve: no alto-falante do celular a soma estoura fácil */
+  var comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -14;
+  comp.ratio.value = 7;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.22;
+  master.connect(comp);
+  comp.connect(ctx.destination);
+
+  /* ruído branco reaproveitado por todo mundo */
+  var noise = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate);
+  var nd = noise.getChannelData(0);
+  for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+
+  var started = false;
+
+  function osc(type, freq, at, dur, peak, dest) {
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, at);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(peak, at + Math.min(0.02, dur * 0.15));
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    o.connect(g); g.connect(dest || master);
+    o.start(at); o.stop(at + dur + 0.05);
+    return o;
+  }
+
+  function burst(at, dur, freq, q, peak, pan) {
+    var src = ctx.createBufferSource();
+    src.buffer = noise;
+    src.loop = true;
+    var f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.setValueAtTime(freq, at);
+    f.Q.value = q;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(peak, at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    var p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    src.connect(f); f.connect(g);
+    if (p) { p.pan.value = pan; g.connect(p); p.connect(master); }
+    else g.connect(master);
+    src.start(at); src.stop(at + dur + 0.05);
+  }
+
+  /* Agenda a trilha inteira de uma vez. `at` é o instante real em que ela
+     começa a soar, `rate` é o passo da animação e `skipTo` diz em que ponto
+     da coreografia a gente está entrando — porque o navegador costuma só
+     liberar o áudio depois de um toque, com a animação já rodando. O que já
+     passou não toca; o que é contínuo entra no meio, como numa mesa de som. */
+  function schedule(at, rate, skipTo) {
+    var from = skipTo || 0;
+    var T = function (beat) { return at + Math.max(0, beat - from) / rate; };
+    var outAt = OUT_BEAT;
+    var END = T(outAt + 0.55);
+
+    master.gain.setValueAtTime(0.0001, at);
+    master.gain.exponentialRampToValueAtTime(0.78, T(0.3));
+
+    /* --- sub: o chão da coisa ------------------------------------------ */
+    var subG = ctx.createGain();
+    subG.gain.setValueAtTime(0.0001, at);
+    subG.gain.exponentialRampToValueAtTime(0.075, T(0.3));
+    subG.gain.exponentialRampToValueAtTime(0.30, T(1.7));
+    subG.gain.setValueAtTime(0.30, T(outAt));
+    subG.gain.exponentialRampToValueAtTime(0.55, T(outAt + 0.4));
+    subG.gain.exponentialRampToValueAtTime(0.0001, END);
+    subG.connect(master);
+
+    var sub = ctx.createOscillator();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(30, at);
+    sub.frequency.exponentialRampToValueAtTime(44, T(2.0));
+    sub.frequency.exponentialRampToValueAtTime(38, T(outAt + 0.4));
+    sub.connect(subG);
+    sub.start(at); sub.stop(END + 0.1);
+
+    var sub2 = ctx.createOscillator();
+    sub2.type = 'triangle';
+    sub2.frequency.setValueAtTime(45.5, at);
+    sub2.frequency.exponentialRampToValueAtTime(66, T(2.0));
+    var sub2g = ctx.createGain();
+    sub2g.gain.value = 0.35;
+    sub2.connect(sub2g); sub2g.connect(subG);
+    sub2.start(at); sub2.stop(END + 0.1);
+
+    /* --- enxame: o ar cortado pelos cacos ------------------------------- */
+    var swarm = ctx.createBufferSource();
+    swarm.buffer = noise;
+    swarm.loop = true;
+    var sf = ctx.createBiquadFilter();
+    sf.type = 'bandpass';
+    sf.Q.value = 1.1;
+    sf.frequency.setValueAtTime(700, at);
+    sf.frequency.exponentialRampToValueAtTime(4200, T(1.95));
+    var sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.0001, at);
+    sg.gain.exponentialRampToValueAtTime(0.045, T(0.28));
+    sg.gain.exponentialRampToValueAtTime(0.11, T(1.3));
+    sg.gain.exponentialRampToValueAtTime(0.012, T(2.35));
+    sg.gain.exponentialRampToValueAtTime(0.0001, END);
+    swarm.connect(sf); sf.connect(sg); sg.connect(master);
+    swarm.start(at); swarm.stop(END + 0.1);
+
+    /* --- cacos: tiques metálicos adensando até o encaixe ---------------- */
+    for (var k = 0; k < 26; k++) {
+      var u = k / 25;
+      var beat = 0.22 + Math.pow(u, 0.75) * 1.68;
+      if (beat < from) continue;
+      burst(T(beat + Math.random() * 0.05), 0.05 + Math.random() * 0.09,
+            1400 + Math.random() * 4800, 7 + Math.random() * 9,
+            0.055 + u * 0.05, (Math.random() - 0.5) * 1.6);
+    }
+
+    /* --- o encaixe ------------------------------------------------------ */
+    if (from < 1.98) {
+    var hit = T(1.98);
+
+    var thud = ctx.createOscillator();
+    var thudG = ctx.createGain();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(150, hit);
+    thud.frequency.exponentialRampToValueAtTime(40, hit + 0.22);
+    thudG.gain.setValueAtTime(0.0001, hit);
+    thudG.gain.exponentialRampToValueAtTime(0.80, hit + 0.012);
+    thudG.gain.exponentialRampToValueAtTime(0.0001, hit + 0.55);
+    thud.connect(thudG); thudG.connect(master);
+    thud.start(hit); thud.stop(hit + 0.6);
+
+    burst(hit, 0.12, 3200, 1.2, 0.16, 0);
+
+    /* cauda inarmônica: é o que faz soar metal, e não tambor */
+    var ring = ctx.createGain();
+    ring.gain.value = 1;
+    ring.connect(master);
+    var partials = [[311, 0.085, 2.6], [468, 0.06, 2.2], [727, 0.045, 1.9],
+                    [1097, 0.03, 1.5], [1583, 0.018, 1.1]];
+    for (var q = 0; q < partials.length; q++) {
+      osc('sine', partials[q][0] * (1 + (Math.random() - .5) * 0.01),
+          hit, partials[q][2], partials[q][1], ring);
+    }
+    }
+
+    /* --- riser e entrega ------------------------------------------------ */
+    var up = ctx.createBufferSource();
+    up.buffer = noise;
+    up.loop = true;
+    var uf = ctx.createBiquadFilter();
+    uf.type = 'highpass';
+    uf.frequency.setValueAtTime(300, T(outAt - 0.55));
+    uf.frequency.exponentialRampToValueAtTime(7000, T(outAt + 0.3));
+    var ug = ctx.createGain();
+    ug.gain.setValueAtTime(0.0001, T(outAt - 0.55));
+    ug.gain.exponentialRampToValueAtTime(0.22, T(outAt + 0.22));
+    ug.gain.exponentialRampToValueAtTime(0.0001, END);
+    up.connect(uf); uf.connect(ug); ug.connect(master);
+    up.start(T(outAt - 0.55)); up.stop(END + 0.1);
+
+    master.gain.setValueAtTime(0.78, T(outAt + 0.3));
+    master.gain.exponentialRampToValueAtTime(0.0001, END);
+    started = true;
+  }
+
+  return {
+    ready: function () {
+      /* o navegador só solta o áudio depois de um gesto; aqui a gente tenta
+         e devolve o que conseguiu, para a interface poder oferecer o botão */
+      var r = ctx.resume && ctx.resume();
+      if (r && r.then) r.catch(function () {});
+      return ctx.state === 'running';
+    },
+    resume: function () {
+      var r = ctx.resume && ctx.resume();
+      return r && r.then ? r.catch(function () {}) : Promise.resolve();
+    },
+    live: function () { return ctx.state === 'running'; },
+    playing: function () { return started; },
+    schedule: schedule,
+    now: function () { return ctx.currentTime; },
+    stop: function (fade) {
+      try {
+        var t = ctx.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), t);
+        master.gain.exponentialRampToValueAtTime(0.0001, t + (fade || 0.18));
+        setTimeout(function () { try { ctx.close(); } catch (e) {} }, (fade || 0.18) * 1000 + 120);
+      } catch (e) {}
+    }
+  };
+}
+
 /* ================================================================== cena */
 function boot() {
-  var canvas = document.getElementById('introCanvas');
-  var flash  = document.getElementById('introFlash');
-  var skipBt = document.getElementById('introSkip');
+  var canvas  = document.getElementById('introCanvas');
+  var flash   = document.getElementById('introFlash');
+  var skipBt  = document.getElementById('introSkip');
+  var soundBt = document.getElementById('introSound');
 
-  var mobile = Math.min(window.innerWidth, window.innerHeight) < 700;
   var renderer;
 
   try {
@@ -239,7 +468,7 @@ function boot() {
   } catch (e) { kill(); return; }
   if (!renderer || !renderer.getContext()) { kill(); return; }
 
-  var DPR = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
+  var DPR = Math.min(window.devicePixelRatio || 1, LOW ? 1.35 : 2);
   renderer.setPixelRatio(DPR);
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.toneMapping = THREE.NoToneMapping;      /* o tonemap é nosso, no passe final */
@@ -271,7 +500,7 @@ function boot() {
   scene.add(halo);
 
   /* ------------------------------------------------------------- poeira */
-  var dustCount = mobile ? 200 : 460;
+  var dustCount = LOW ? 130 : 460;
   var dpos = new Float32Array(dustCount * 3);
   var dseed = new Float32Array(dustCount);
   for (var i = 0; i < dustCount; i++) {
@@ -289,7 +518,7 @@ function boot() {
   var dustMat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 }, uOpacity: { value: 0 },
-      uSize: { value: (mobile ? 9 : 12) * DPR },
+      uSize: { value: (LOW ? 9 : 12) * DPR },
       uSprite: { value: radialTexture(0, [[0, 'rgba(255,255,255,1)'], [.45, 'rgba(255,255,255,.25)'], [1, 'rgba(255,255,255,0)']]) }
     },
     vertexShader: [
@@ -340,10 +569,10 @@ function boot() {
   var uAssemble = { value: 0 };
   var maps = scratchMaps();
 
-  fetch('assets/logo/mark-shape.json')
-    .then(function (r) { return r.json(); })
-    .then(function (data) { buildLogo(data); })
-    .catch(function () { kill(); });
+  shapeReq.then(function (data) {
+    if (!data) { kill(); return; }
+    try { buildLogo(data); } catch (e) { kill(); }
+  });
 
   function buildLogo(data) {
     var shapes = data.shapes.map(function (s) {
@@ -389,17 +618,22 @@ function boot() {
     geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
     geo.setAttribute('aDir',  new THREE.BufferAttribute(dir, 3));
 
-    var mat = new THREE.MeshPhysicalMaterial({
+    var spec = {
       color: 0x8f959e,
       metalness: 1,
       roughness: 0.11,
-      roughnessMap: maps.rough,
       normalMap: maps.norm,
       normalScale: new THREE.Vector2(0.38, 0.38),
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.08,
       envMapIntensity: 0.92
-    });
+    };
+    /* verniz e mapa de rugosidade custam shader; num aparelho modesto o ganho
+       não paga o tempo de compilação nem o custo por pixel */
+    if (!LOW) {
+      spec.roughnessMap = maps.rough;
+      spec.clearcoat = 0.35;
+      spec.clearcoatRoughness = 0.08;
+    }
+    var mat = new THREE.MeshPhysicalMaterial(spec);
 
     mat.onBeforeCompile = function (shader) {
       shader.uniforms.uAssemble = uAssemble;
@@ -437,6 +671,7 @@ function boot() {
   var VERT = 'varying vec2 vUv;\nvoid main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
 
   var sceneRT, brightRT, blurA, blurB;
+  var blurPasses = LOW ? 1 : 2;
 
   var brightMat = new THREE.ShaderMaterial({
     uniforms: { tScene: { value: null }, uThreshold: { value: 1.45 } },
@@ -510,7 +745,7 @@ function boot() {
     if (sceneRT) { sceneRT.dispose(); brightRT.dispose(); blurA.dispose(); blurB.dispose(); }
 
     sceneRT = new THREE.WebGLRenderTarget(w, h, {
-      type: THREE.HalfFloatType, samples: mobile ? 2 : 4,
+      type: THREE.HalfFloatType, samples: LOW ? 0 : 4,
       depthBuffer: true, colorSpace: THREE.NoColorSpace
     });
     var opt = { type: THREE.HalfFloatType, depthBuffer: false, colorSpace: THREE.NoColorSpace };
@@ -557,8 +792,43 @@ function boot() {
 
   /* ------------------------------------------------------------ timeline */
   var t0 = 0, raf = 0, running = false, ending = false;
-  var OUT_AT = 3.05, OUT_LEN = 0.55;
+  var lastFrame = 0, framesSeen = 0, frameAcc = 0, downshifted = false;
+  var OUT_AT = OUT_BEAT, OUT_LEN = 0.55;
   var outAt = OUT_AT;
+
+  /* ------------------------------------------------------------------ som */
+  var sound = null, soundOn = false;
+
+  function pref(v) {
+    try {
+      if (v === undefined) return localStorage.getItem('sheper:som');
+      localStorage.setItem('sheper:som', v);
+    } catch (e) {}
+    return null;
+  }
+
+  function labelSound() {
+    if (!soundBt) return;
+    soundBt.setAttribute('aria-pressed', String(soundOn));
+    soundBt.classList.toggle('is-on', soundOn);
+    var txt = soundBt.querySelector('.intro__sound-txt');
+    if (txt) txt.textContent = soundOn ? 'Som' : 'Ativar som';
+  }
+
+  /* Entra na trilha no ponto em que a animação está: o navegador pode ter
+     liberado o áudio no meio do caminho. */
+  function armSound() {
+    if (!sound || !running || ending) return;
+    sound.resume().then(function () {
+      if (!sound.live()) { soundOn = false; labelSound(); return; }
+      if (!sound.playing()) {
+        var beat = (performance.now() / 1000 - t0) * RATE;
+        sound.schedule(sound.now() + 0.02, RATE, beat);
+      }
+      soundOn = true;
+      labelSound();
+    });
+  }
 
   function ready() {
     /* primeiro frame já com tudo compilado, para o corte não engasgar */
@@ -571,8 +841,15 @@ function boot() {
     running = true;
     t0 = performance.now() / 1000;
     setTimeout(function () { if (!ending) finish(); }, 12000);
+
+    if (pref() !== 'off') {
+      sound = introSound();
+      labelSound();
+      /* quase sempre o navegador vai recusar sem um toque antes — daí o botão */
+      armSound();
+    }
     overlay.classList.add('is-live');
-    setTimeout(function () { overlay.classList.add('is-word'); }, 1750);
+    setTimeout(function () { overlay.classList.add('is-word'); }, 1750 / RATE);
     raf = requestAnimationFrame(loop);
   }
 
@@ -587,18 +864,17 @@ function boot() {
     brightMat.uniforms.tScene.value = sceneRT.texture;
     drawQuad(brightMat, brightRT);
 
-    blurMat.uniforms.tMap.value = brightRT.texture;
-    blurMat.uniforms.uDir.value.set(1 / blurA.width, 0);
-    drawQuad(blurMat, blurA);
-    blurMat.uniforms.tMap.value = blurA.texture;
-    blurMat.uniforms.uDir.value.set(0, 1 / blurA.height);
-    drawQuad(blurMat, blurB);
-    blurMat.uniforms.tMap.value = blurB.texture;
-    blurMat.uniforms.uDir.value.set(2 / blurA.width, 0);
-    drawQuad(blurMat, blurA);
-    blurMat.uniforms.tMap.value = blurA.texture;
-    blurMat.uniforms.uDir.value.set(0, 2 / blurA.height);
-    drawQuad(blurMat, blurB);
+    var src = brightRT.texture;
+    for (var b = 0; b < blurPasses; b++) {
+      var step = b + 1;
+      blurMat.uniforms.tMap.value = src;
+      blurMat.uniforms.uDir.value.set(step / blurA.width, 0);
+      drawQuad(blurMat, blurA);
+      blurMat.uniforms.tMap.value = blurA.texture;
+      blurMat.uniforms.uDir.value.set(0, step / blurA.height);
+      drawQuad(blurMat, blurB);
+      src = blurB.texture;
+    }
 
     finalMat.uniforms.tScene.value = sceneRT.texture;
     finalMat.uniforms.tBloom.value = blurB.texture;
@@ -609,7 +885,19 @@ function boot() {
     if (!running) return;
     raf = requestAnimationFrame(loop);
 
-    var t = performance.now() / 1000 - t0;
+    var now = performance.now();
+    var t = (now / 1000 - t0) * RATE;
+
+    /* Se o aparelho não estiver dando conta, corta qualidade em vez de deixar
+       a animação arrastar. Só mede depois que os shaders já compilaram. */
+    if (!downshifted && t > 0.35) {
+      if (lastFrame) { frameAcc += now - lastFrame; framesSeen++; }
+      if (framesSeen === 15) {
+        if (frameAcc / framesSeen > 28) downshift();
+        else downshifted = true;
+      }
+    }
+    lastFrame = now;
 
     /* montagem */
     var asm = span(t, 0.18, 2.05);
@@ -653,6 +941,16 @@ function boot() {
     if (t > outAt + OUT_LEN * 0.62) finish();
   }
 
+  /* Menos pixels e menos bloom, na hora, sem interromper a cena. */
+  function downshift() {
+    downshifted = true;
+    DPR = Math.max(1, DPR * 0.7);
+    blurPasses = 1;
+    dustMat.uniforms.uSize.value *= 0.7;
+    renderer.setPixelRatio(DPR);
+    resize();
+  }
+
   /* ------------------------------------------------------------- entrega */
   function finish() {
     if (ending) return;
@@ -671,16 +969,18 @@ function boot() {
       if (scene.environment) scene.environment.dispose();
       if (sceneRT) { sceneRT.dispose(); brightRT.dispose(); blurA.dispose(); blurB.dispose(); }
       renderer.dispose();
+      if (sound) sound.stop(0.5);
       kill();
     }, 320);
   }
 
   function skip() {
     if (ending || !running) { kill(); return; }
-    var t = performance.now() / 1000 - t0;
+    var t = (performance.now() / 1000 - t0) * RATE;
     /* não corta seco: joga o final para daqui a pouco */
     outAt = Math.min(outAt, t + 0.12);
     OUT_LEN = 0.4;
+    if (sound) sound.stop(0.45 / RATE);
   }
 
   var onKey = function (e) {
@@ -688,7 +988,20 @@ function boot() {
   };
   /* aba escondida no meio da abertura: não vale a pena insistir */
   var onHide = function () { if (document.hidden && running) skip(); };
-  var onClick = function (e) { if (e.target !== skipBt) skip(); };
+  var onClick = function (e) { if (!e.target.closest('button')) skip(); };
+
+  if (soundBt) soundBt.addEventListener('click', function () {
+    if (soundOn) {
+      soundOn = false;
+      pref('off');
+      if (sound) { sound.stop(0.25); sound = null; }
+      labelSound();
+    } else {
+      pref('on');
+      if (!sound) sound = introSound();
+      armSound();
+    }
+  });
 
   if (skipBt) skipBt.addEventListener('click', skip);
   overlay.addEventListener('click', onClick);
