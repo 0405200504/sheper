@@ -41,16 +41,9 @@ manuscrita das seções) e **JetBrains Mono** (rótulos e números). Todas via G
 
 ## Abertura 3D
 
-Quem chega pela primeira vez cai numa portaria preta com um botão: **Abrir**.
-O clique é o que abre a cena — e, de quebra, é o que destrava o áudio no
-navegador, então o som entra junto com o primeiro estilhaço em vez de precisar ser
-resgatado no meio. Daí vêm ~3,5s de abertura: estilhaços de metal giram no escuro, se
-encaixam na ovelha da marca, a luz varre a peça e um estouro de luz entrega o hero.
-
-Enquanto a portaria está no ar, o three.js carrega, o estúdio é montado e a geometria
-é compilada. Quando o visitante clica, quase sempre já está tudo pronto — se não
-estiver, a portaria mostra *preparando a cena* e parte sozinha assim que estiver.
-Ou seja: o tempo de carga acontece atrás de uma tela que tem o que dizer.
+Quem chega pela primeira vez vê uma abertura de ~3,5s antes da página: estilhaços de
+metal giram no escuro, se encaixam na ovelha da marca, a luz varre a peça e um estouro
+de luz entrega o hero. Ela começa sozinha, assim que a cena está pronta.
 
 Como funciona, em resumo:
 
@@ -67,26 +60,16 @@ Como funciona, em resumo:
   adensando, o baque do encaixe com cauda inarmônica e um riser na entrega, tudo
   gerado em Web Audio e agendado a partir da mesma linha do tempo da animação.
 
-### A portaria
-
-- **Abrir** — entra com som, do primeiro frame.
-- **Entrar em silêncio** — entra sem som, para quem está no escritório ou no ônibus.
-- Ninguém fica preso numa tela preta: sem resposta por 15s **com a aba à vista**, a
-  abertura entra sozinha, em silêncio. Aba escondida não conta — a pessoa está em
-  outro lugar e perderia a cena.
-- Gesto solto na portaria (rolar, deslizar, `Esc`) não dispara nada: os atalhos de
-  pular só passam a valer quando a animação começa de fato.
-
 ### Som
 
-O navegador só libera áudio depois de um gesto — por isso a portaria existe. O clique
-destrava o contexto (com um buffer mudo de um sample, que é o que o Safari do iPhone
-exige) e a trilha é agendada a partir do t=0 da animação.
+O navegador só libera áudio depois de um gesto do visitante. A abertura tenta tocar
+assim mesmo — em quem já visitou o site antes costuma passar — e, quando é recusada,
+oferece **Ativar som** no canto inferior esquerdo.
 
-Durante a abertura há ainda o botão de som no canto inferior esquerdo, para tirar ou
-pôr no meio do caminho. Ligando no meio, a trilha entra no ponto em que a animação
-está — o que já passou não toca de novo. A escolha fica no `localStorage`
-(`sheper:som`).
+Tocando nele, a trilha entra no ponto em que a animação está: o que já passou não toca
+de novo. O clique também destrava o contexto de áudio com um buffer mudo de um sample,
+que é o que o Safari do iPhone exige além do `resume()`. A escolha fica guardada no
+`localStorage` (`sheper:som`), então quem ligou uma vez tende a ouvir nas próximas.
 
 ### No celular
 
@@ -120,8 +103,8 @@ regras valem para não parecer que a página recarregou:
 - se o three.js ou o JSON do contorno falharem — há um cronômetro de socorro que
   entrega a página em ~2,4s.
 
-Com a animação rodando, o visitante pode pular a qualquer momento: botão **Pular**,
-clique, `Esc`, espaço, scroll ou swipe. Os botões da interface não disparam o pulo.
+O visitante pode pular a qualquer momento: botão **Pular abertura**, clique, `Esc`,
+espaço, scroll ou swipe. Os botões da interface não disparam o pulo.
 
 **Para desligar de vez:** apague o bloco `<script>` da abertura no fim do `<head>` do
 `index.html`. O resto da página não depende dele.

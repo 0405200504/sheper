@@ -472,9 +472,6 @@ function boot() {
   var flash   = document.getElementById('introFlash');
   var skipBt  = document.getElementById('introSkip');
   var soundBt = document.getElementById('introSound');
-  var gate    = document.getElementById('introGate');
-  var enterBt = document.getElementById('introEnter');
-  var quietBt = document.getElementById('introQuiet');
 
   var renderer;
 
@@ -848,12 +845,6 @@ function boot() {
     });
   }
 
-  /* ---------------------------------------------------------- a portaria
-     A cena fica pronta e espera. Quem abre é o visitante: o clique é o que
-     destrava o áudio no navegador, então o som entra junto com o primeiro
-     estilhaço em vez de precisar ser resgatado no meio.                    */
-  var prepared = false, launched = false, pending = false, withSound = false;
-
   function ready() {
     /* primeiro frame já com tudo compilado, para a partida não engasgar */
     uAssemble.value = 1;
@@ -862,37 +853,22 @@ function boot() {
     uAssemble.value = 0;
 
     if (window.__sheperIntroCalm) window.__sheperIntroCalm();
-    prepared = true;
-    overlay.classList.add('is-ready');
-    if (pending) launch();
-  }
 
-  function launch() {
-    if (launched || !prepared) return;
-    launched = true;
-
-    if (gate) gate.classList.add('is-gone');
     overlay.classList.add('is-live');
-
     running = true;
     t0 = performance.now() / 1000;
     setTimeout(function () { if (!ending) finish(); }, 12000);
     setTimeout(function () { overlay.classList.add('is-word'); }, 1750 / RATE);
 
-    if (withSound && sound) {
-      if (sound.live()) {
-        sound.schedule(sound.now() + 0.05, RATE, 0);
-        soundOn = true;
-        labelSound();
-      } else {
-        /* o resume é assíncrono: se ainda não acordou, a trilha entra pelo
-           caminho normal, no ponto certo da coreografia */
-        armSound();
-      }
+    /* O navegador só libera áudio depois de um gesto do visitante. A gente
+       tenta assim mesmo — em quem já visitou antes costuma passar — e, quando
+       é recusado, o botão de som fica ali para resgatar a trilha no meio. */
+    if (pref() !== 'off') {
+      sound = introSound();
+      labelSound();
+      armSound();
     }
 
-    /* só agora vale ouvir scroll e clique como "quero pular" — antes disso
-       um toque à toa na portaria mataria a abertura antes de ela existir */
     overlay.addEventListener('click', onClick);
     window.addEventListener('keydown', onKey);
     window.addEventListener('wheel', skip, { passive: true });
@@ -900,27 +876,6 @@ function boot() {
     document.addEventListener('visibilitychange', onHide);
 
     raf = requestAnimationFrame(loop);
-  }
-
-  /* Chamado de dentro do clique: é a única janela em que o navegador deixa
-     destravar o áudio. Se a cena ainda não estiver pronta, a portaria mostra
-     que está carregando e a partida acontece sozinha assim que estiver. */
-  function enter(som) {
-    if (launched || pending) return;
-    pending = true;
-    withSound = !!som;
-
-    if (withSound) {
-      pref('on');
-      sound = introSound();
-      if (sound) sound.unlock();
-      else withSound = false;
-    } else {
-      pref('off');
-    }
-
-    if (prepared) launch();
-    else if (gate) gate.classList.add('is-waiting');
   }
 
   function renderTick(time) {
@@ -1074,24 +1029,8 @@ function boot() {
   });
 
   if (skipBt) skipBt.addEventListener('click', skip);
-  if (enterBt) enterBt.addEventListener('click', function () { enter(true); });
-  if (quietBt) quietBt.addEventListener('click', function () { enter(false); });
-
-  /* Ninguém fica preso numa tela preta: se a portaria ficar sem resposta com a
-     aba à vista, a abertura entra sozinha, em silêncio. Aba escondida não
-     conta — a pessoa está em outro lugar e perderia a cena. */
-  var idle = 0;
-  var waitForVisit = function () {
-    clearTimeout(idle);
-    if (document.hidden) return;
-    idle = setTimeout(function () { enter(false); }, 15000);
-  };
-  waitForVisit();
-  document.addEventListener('visibilitychange', waitForVisit);
 
   function detach() {
-    clearTimeout(idle);
-    document.removeEventListener('visibilitychange', waitForVisit);
     window.removeEventListener('resize', resize);
     window.removeEventListener('pointermove', onPointer);
     window.removeEventListener('keydown', onKey);
