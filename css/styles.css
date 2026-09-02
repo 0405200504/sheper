@@ -1313,7 +1313,12 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
    ========================================================================== */
 .intro, .intro-flash { display: none; }
 
-html.intro-on { overflow: hidden; }
+html.intro-on {
+  overflow: hidden;
+  /* trava a rolagem sem recolher a barra: senão, no Windows e no Linux, a
+     página inteira anda ~15px de lado quando a abertura sai */
+  scrollbar-gutter: stable;
+}
 html.intro-on body { overflow: hidden; height: 100%; }
 
 html.intro-on .intro {
@@ -1562,7 +1567,13 @@ html.intro-done .intro-flash {
   pointer-events: none;
   transition: opacity .18s linear;
 }
-.intro-flash.is-on { opacity: 1; }
+/* Precisa do mesmo prefixo das regras acima: `html.intro-on .intro-flash`
+   tem especificidade maior que `.intro-flash.is-on`, e o `opacity: 0` de lá
+   vencia — o estouro de luz simplesmente nunca acendia, e a abertura cortava
+   seco para a página. `transition: none` para acender no quadro, sem depender
+   de uma transição que um quadro engasgado pode comer. */
+html.intro-on .intro-flash.is-on,
+html.intro-done .intro-flash.is-on { opacity: 1; transition: none; }
 html.intro-done .intro-flash { transition: opacity .75s var(--ease); }
 
 /* A página não aparece parada: herda o movimento da abertura. */
@@ -1571,14 +1582,20 @@ html.intro-done .intro-flash { transition: opacity .75s var(--ease); }
   to   { opacity: 1; transform: none; }
 }
 html.intro-done .hero__inner > * {
-  animation: introRise .95s var(--ease) backwards;
+  animation: introRise .6s var(--ease) backwards;
 }
-html.intro-done .hero__inner > *:nth-child(1) { animation-delay: .06s; }
-html.intro-done .hero__inner > *:nth-child(2) { animation-delay: .14s; }
-html.intro-done .hero__inner > *:nth-child(3) { animation-delay: .22s; }
-html.intro-done .hero__inner > *:nth-child(4) { animation-delay: .30s; }
-html.intro-done .header,
-html.intro-done .hero__wall { animation: introRise 1.2s var(--ease) backwards; }
+html.intro-done .hero__inner > *:nth-child(2) { animation-delay: .05s; }
+html.intro-done .hero__inner > *:nth-child(3) { animation-delay: .10s; }
+html.intro-done .hero__inner > *:nth-child(4) { animation-delay: .15s; }
+/* O mural do hero NÃO entra animado. Ele é o fundo: se aparecer depois, a
+   página surge preta e vai se montando — que é exatamente a sensação de
+   recarregar. Quando o estouro de luz se dissipa, tudo já tem que estar lá.
+   (Animar `transform` nele também estava errado: o mural já tem rotate +
+   scale próprios, e a animação apagava os dois.) */
+@keyframes introFade {
+  from { opacity: 0; }
+}
+html.intro-done .header { animation: introFade .7s var(--ease) backwards; }
 
 @media (max-width: 640px) {
   .intro__kick span:last-child { display: none; }

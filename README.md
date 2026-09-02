@@ -99,6 +99,19 @@ está — o que já passou não toca de novo. A escolha fica no `localStorage`
   frames e **corta qualidade sozinha** — derruba resolução e bloom sem interromper
   a cena — em vez de deixar a animação arrastando.
 
+### A entrega
+
+O corte da abertura para a página é um estouro de luz que se dissipa em 0,75s. Duas
+regras valem para não parecer que a página recarregou:
+
+- **Quando a luz clareia, a página já tem que estar montada.** Nada de fundo entrando
+  animado — se o mural do hero aparecer depois, a página surge preta e vai se montando,
+  que é exatamente a cara de um reload. Só o texto do hero assenta, e dentro da própria
+  clareada.
+- **Nada que já tenha `transform` pode ser animado por `transform`.** O mural do hero
+  tem `rotate(-4deg) scale(1.18)`; uma animação de entrada nele apagava os dois e o
+  mural pulava 350px de largura, ida e volta.
+
 **Quando ela não roda** (e a página abre direto, sem baixar nada da abertura):
 
 - `prefers-reduced-motion: reduce`;
