@@ -23,9 +23,80 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&family=Caveat:wght@700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="css/styles.css">
+<!-- Abertura 3D: decidida antes de qualquer pixel. Se não for rodar, nada
+     do peso dela chega a ser baixado. -->
+<script>
+(function () {
+  var d = document, r = d.documentElement, ok = true;
+  try {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) ok = false;
+    if (sessionStorage.getItem('sheper:intro') === '1') ok = false;
+  } catch (e) {}
+  var c = navigator.connection;
+  if (c && (c.saveData === true || /2g/.test(c.effectiveType || ''))) ok = false;
+  if (!window.WebGL2RenderingContext) ok = false;
+  if (!ok) return;
+
+  try { sessionStorage.setItem('sheper:intro', '1'); } catch (e) {}
+  r.classList.add('intro-on');
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+  function kill() {
+    if (!r.classList.contains('intro-on')) return;
+    clearTimeout(slow); clearTimeout(guard);
+    r.classList.remove('intro-on');
+    r.classList.add('intro-done');
+    var n = d.getElementById('intro');
+    if (n) n.parentNode.removeChild(n);
+    var f = d.getElementById('introFlash');
+    if (f) {
+      f.classList.remove('is-on');
+      setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 900);
+    }
+    window.scrollTo(0, 0);
+  }
+  window.__sheperIntroKill = kill;
+  /* quando a abertura assume o controle, os cronômetros de socorro saem de cena */
+  window.__sheperIntroCalm = function () { clearTimeout(slow); clearTimeout(guard); };
+
+  /* rede ruim ou WebGL travado: some com a abertura e entrega a página */
+  var slow  = setTimeout(function () { if (!window.__sheperIntroBooting) kill(); }, 2400);
+  var guard = setTimeout(kill, 7000);
+
+  ['assets/vendor/three.module.js', 'assets/vendor/three.core.min.js'].forEach(function (u) {
+    var l = d.createElement('link');
+    l.rel = 'modulepreload'; l.href = u;
+    d.head.appendChild(l);
+  });
+
+  var s = d.createElement('script');
+  s.type = 'module'; s.src = 'js/intro.js';
+  d.head.appendChild(s);
+})();
+</script>
 </head>
 
 <body>
+
+<!-- ======================================================================
+     ABERTURA 3D
+     ====================================================================== -->
+<div class="intro" id="intro">
+  <canvas class="intro__canvas" id="introCanvas" aria-hidden="true"></canvas>
+  <div class="intro__ui" aria-hidden="true">
+    <p class="intro__kick">
+      <span>Sheper &middot; Agência criativa</span>
+      <span>São Paulo &middot; Brasil</span>
+    </p>
+    <div class="intro__sign">
+      <img src="assets/logo/sheper-wordmark-white.png" alt="" width="1369" height="303">
+      <p>A gente não segue o rebanho</p>
+    </div>
+  </div>
+  <button class="intro__skip" id="introSkip" type="button">Pular abertura</button>
+</div>
+<div class="intro-flash" id="introFlash" aria-hidden="true"></div>
+
 <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
 <!-- ======================================================================
@@ -567,9 +638,7 @@
       </ol>
     </div>
 
-    <!-- TROCAR: cole em data-endpoint a URL do app do Apps Script.
-         O passo a passo está no README, seção "Formulário". -->
-    <form class="form" id="leadForm" data-endpoint="COLE_A_URL_DO_APPS_SCRIPT_AQUI" novalidate data-reveal>
+    <form class="form" id="leadForm" data-endpoint="https://script.google.com/macros/s/AKfycbw49qlyzQThrZkdiqvZ2eQQJU7pTnqrl3eKbBo96gHFAafwNuRoWSkk-BaqRx2roxPKFA/exec" novalidate data-reveal>
       <div class="form__grid">
 
         <p class="field">

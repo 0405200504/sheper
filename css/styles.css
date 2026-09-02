@@ -1313,3 +1313,140 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   [data-reveal] { opacity: 1; transform: none; }
   .marquee__track { animation: none; }
 }
+
+/* ==========================================================================
+   ABERTURA 3D
+   Fica escondida por padrão: só existe quando o script de topo decide que
+   vale a pena rodar. Sem JS, sem WebGL ou em modo econômico, a página abre
+   direto e nada disso é baixado.
+   ========================================================================== */
+.intro, .intro-flash { display: none; }
+
+html.intro-on { overflow: hidden; }
+html.intro-on body { overflow: hidden; height: 100%; }
+
+html.intro-on .intro {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #040405;
+  opacity: 1;
+  transition: opacity .34s linear;
+}
+html.intro-on .intro.is-out { opacity: 0; }
+
+.intro__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.intro__ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(20px, 4vw, 40px);
+  pointer-events: none;
+}
+
+.intro__kick {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1.6vw, 11px);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(244, 242, 238, .5);
+  animation: introKick 1s var(--ease) .12s backwards;
+}
+@keyframes introKick {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.intro__sign {
+  text-align: center;
+  transform: translateY(2px);
+}
+.intro__sign img {
+  width: clamp(132px, 16vw, 210px);
+  height: auto;
+  margin: 0 auto 12px;
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transition: opacity .8s var(--ease), clip-path 1.1s var(--ease);
+}
+.intro__sign p {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1.5vw, 11px);
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: rgba(244, 242, 238, .42);
+  opacity: 0;
+  transition: opacity 1s var(--ease) .18s;
+}
+.intro.is-word .intro__sign img { opacity: 1; clip-path: inset(0 0 0 0); }
+.intro.is-word .intro__sign p { opacity: 1; }
+
+.intro__skip {
+  position: absolute;
+  right: clamp(20px, 4vw, 40px);
+  bottom: clamp(20px, 4vw, 40px);
+  z-index: 2;
+  padding: 9px 16px;
+  border: 1px solid rgba(244, 242, 238, .2);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(244, 242, 238, .62);
+  background: rgba(10, 10, 10, .3);
+  backdrop-filter: blur(6px);
+  animation: introKick .7s var(--ease) 1.1s backwards;
+  transition: color .25s var(--ease), border-color .25s var(--ease);
+}
+.intro__skip:hover { color: var(--paper); border-color: rgba(244, 242, 238, .5); }
+
+/* O estouro de luz vive fora da abertura: ele sobrevive ao canvas e entrega
+   a página por baixo. */
+html.intro-on .intro-flash,
+html.intro-done .intro-flash {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 2001;
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s linear;
+}
+.intro-flash.is-on { opacity: 1; }
+html.intro-done .intro-flash { transition: opacity .75s var(--ease); }
+
+/* A página não aparece parada: herda o movimento da abertura. */
+@keyframes introRise {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: none; }
+}
+html.intro-done .hero__inner > * {
+  animation: introRise .95s var(--ease) backwards;
+}
+html.intro-done .hero__inner > *:nth-child(1) { animation-delay: .06s; }
+html.intro-done .hero__inner > *:nth-child(2) { animation-delay: .14s; }
+html.intro-done .hero__inner > *:nth-child(3) { animation-delay: .22s; }
+html.intro-done .hero__inner > *:nth-child(4) { animation-delay: .30s; }
+html.intro-done .header,
+html.intro-done .hero__wall { animation: introRise 1.2s var(--ease) backwards; }
+
+@media (max-width: 640px) {
+  .intro__kick span:last-child { display: none; }
+}

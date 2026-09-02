@@ -238,25 +238,25 @@
       dados.pagina = location.href;
 
       var corpo = JSON.stringify(dados);
-      var opcoes = { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: corpo };
 
       travar(true, 'Enviando');
       statusEl.className = 'form__status';
 
-      var deuCerto = function () {
-        travar(false, 'Enviar aplicação');
-        form.reset();
-        setStatus('ok', 'Recebido. A gente lê e responde em até 24h úteis, no e-mail e no WhatsApp que você deixou.');
-      };
-
-      fetch(endpoint, opcoes)
-        .then(deuCerto)
-        .catch(function () {
-          /* O Apps Script às vezes barra a leitura da resposta por CORS mesmo
-             tendo gravado a linha. Reenviamos sem ler a resposta: o id acima
-             garante que não vira registro duplicado. */
-          opcoes.mode = 'no-cors';
-          return fetch(endpoint, opcoes).then(deuCerto);
+      /* Só damos "recebido" depois de ler ok:true na resposta. Um envio que a
+         gente não consegue confirmar é tratado como falha: é melhor a pessoa
+         reenviar (o id acima impede linha duplicada) do que sair achando que
+         aplicou quando a linha nunca chegou na planilha. */
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: corpo
+      })
+        .then(function (resposta) { return resposta.json(); })
+        .then(function (resultado) {
+          if (!resultado || resultado.ok !== true) throw new Error('resposta inesperada');
+          travar(false, 'Enviar aplicação');
+          form.reset();
+          setStatus('ok', 'Recebido. A gente lê e responde em até 24h úteis, no e-mail e no WhatsApp que você deixou.');
         })
         .catch(function () {
           travar(false, 'Enviar aplicação');

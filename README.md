@@ -1,7 +1,8 @@
 # SHEPER — Landing page / portfólio
 
 Página de vendas e portfólio da **Sheper**, agência criativa para marcas de streetwear
-e artistas. Site estático: HTML, CSS e JavaScript puros, sem build e sem dependências.
+e artistas. Site estático: HTML, CSS e JavaScript puros, sem build. A única biblioteca
+é o three.js, hospedado junto com o site e carregado só quando a abertura 3D vai rodar.
 
 ## Rodar localmente
 
@@ -19,6 +20,9 @@ Ou abra o `index.html` direto no navegador.
 | `index.html` | Página completa (12 seções) |
 | `css/styles.css` | Design system: tokens, seções invertidas, componentes, responsivo |
 | `js/main.js` | Header fixo, menu mobile, reveal on scroll, contadores, carrossel de cases, autoplay dos vídeos, lightbox |
+| `js/intro.js` | Abertura 3D: estúdio HDR gerado em runtime, marca extrudada em metal, montagem por estilhaços e pós-processamento (bloom, grão, vinheta) |
+| `assets/vendor/` | three.js r185 (`three.module.js` + `three.core.min.js`), servido do próprio domínio |
+| `assets/logo/mark-shape.json` | Contorno vetorial da ovelha, traçado a partir do PNG — é dele que sai a geometria 3D |
 | `assets/logo/` | Logo em PNG transparente (lockup, símbolo e wordmark, preto e branco) + favicons |
 | `assets/img/` | 35 fotos otimizadas (máx. 1500px, JPEG progressivo) + `fundadores.png`, o recorte do Juan e do Satiro com contorno de adesivo e fundo transparente |
 | `assets/video/` | 4 vídeos verticais comprimidos (360×640) + posters |
@@ -34,6 +38,38 @@ nenhuma regra duplicada.
 
 Tipografia: **Archivo** (display), **Inter** (texto), **Caveat** (assinatura
 manuscrita das seções) e **JetBrains Mono** (rótulos e números). Todas via Google Fonts.
+
+## Abertura 3D
+
+Quem chega pela primeira vez vê uma abertura de ~3,5s antes da página: estilhaços de
+metal giram no escuro, se encaixam na ovelha da marca, a luz varre a peça e um estouro
+de luz entrega o hero.
+
+Como funciona, em resumo:
+
+- **Geometria de verdade.** O contorno da ovelha foi traçado do PNG para
+  `assets/logo/mark-shape.json` e vira uma peça extrudada com bisel — por isso o
+  brilho corre pela borda em vez de ser um decalque.
+- **Iluminação de estúdio.** O HDRI é montado em código (float, com valores acima de 1)
+  e passa pelo PMREM do three.js. Não há arquivo `.hdr` para baixar.
+- **Montagem por estilhaço.** Cada triângulo carrega uma direção e um atraso próprios,
+  aplicados no vertex shader. Nada de mil objetos: é uma malha só.
+- **Pós-processamento próprio.** Bloom em duas passadas, tonemap ACES, aberração
+  cromática, vinheta e grão — tudo em `js/intro.js`, sem os módulos de exemplo.
+
+**Quando ela não roda** (e a página abre direto, sem baixar nada da abertura):
+
+- `prefers-reduced-motion: reduce`;
+- segunda visita na mesma aba (`sessionStorage`);
+- sem WebGL2, no modo de economia de dados ou em conexão 2G;
+- se o three.js ou o JSON do contorno falharem — há um cronômetro de socorro que
+  entrega a página em ~2,4s.
+
+O visitante pode pular a qualquer momento: botão **Pular abertura**, clique, `Esc`,
+espaço, scroll ou swipe.
+
+**Para desligar de vez:** apague o bloco `<script>` da abertura no fim do `<head>` do
+`index.html`. O resto da página não depende dele.
 
 ## ⚠️ Antes de publicar
 
@@ -52,6 +88,18 @@ uns 5 minutos e não custa nada:
    - Quem pode acessar: **Qualquer pessoa**
 6. Autorize quando o Google pedir e copie a URL que termina em `/exec`.
 7. No `index.html`, cole essa URL no `data-endpoint` do `<form id="leadForm">`.
+
+> **O passo 5 é onde quase todo mundo tropeça.** Se "Quem pode acessar" ficar em
+> "Somente eu" ou "Qualquer pessoa com Conta do Google", o endpoint responde com
+> um redirecionamento para a tela de login do Google em vez de gravar, e nenhum
+> visitante do site consegue enviar. Dá pra checar em um comando:
+>
+> ```bash
+> curl -s -o /dev/null -D - "SUA_URL/exec" | grep -i "^location"
+> ```
+>
+> Se aparecer um `location:` apontando para `accounts.google.com`, a permissão
+> está errada. Quando estiver certa, esse comando não devolve nada.
 
 Para conferir se ficou de pé, abra a URL `/exec` no navegador: deve responder
 `{"ok":true,"servico":"sheper-formulario"}`.
@@ -122,9 +170,11 @@ Três detalhes de implementação que valem saber:
 - **Armadilha de bot.** Existe um campo `empresa` escondido por CSS. Humano nunca
   vê nem preenche; robô preenche tudo. Se vier preenchido, o script responde
   "ok" e descarta em silêncio, para o robô não perceber que foi barrado.
-- **Reenvio sem duplicar.** O Apps Script às vezes grava a linha mas bloqueia a
-  leitura da resposta por CORS. Quando isso acontece o site reenvia sem ler a
-  resposta, e cada envio carrega um `id` próprio que o script confere antes de
-  gravar. Assim o reenvio nunca vira duas linhas da mesma pessoa.
+- **Sucesso só quando confirmado.** O site só mostra "recebido" depois de ler
+  `ok: true` na resposta do script. Envio que não dá pra confirmar aparece como
+  falha, de propósito: é melhor a pessoa reenviar do que sair achando que aplicou
+  quando a linha nunca chegou. Para o reenvio ser seguro, cada envio carrega um
+  `id` próprio que o script confere antes de gravar, então tentar de novo nunca
+  vira duas linhas da mesma pessoa.
 - **Fila de escrita.** O script usa `LockService`, então dois envios simultâneos
   esperam a vez em vez de brigarem pela mesma linha.
