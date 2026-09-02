@@ -1092,33 +1092,11 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 @media (min-width: 960px) { .contato { grid-template-columns: 1fr 1.15fr; } }
 
 .contato__intro h2 { margin-bottom: 22px; }
-.contato__intro .lede { margin-bottom: 40px; }
+.contato__intro .lede { margin-bottom: 0; }
 
-.passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
-.passos li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 18px;
-  padding-block: 22px;
-  border-top: 1px solid var(--line);
-}
-.passos li:last-child { border-bottom: 1px solid var(--line); }
-.passos b {
-  font-family: var(--font-mono);
-  font-size: .7rem;
-  font-weight: 500;
-  letter-spacing: .16em;
-  color: var(--fg-faint);
-  padding-top: .35em;
-}
-.passos h3 {
-  margin: 0 0 5px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.06rem;
-  letter-spacing: -0.025em;
-}
-.passos p { grid-column: 2; margin: 0; font-size: .92rem; color: var(--fg-mute); }
+/* A galeria termina escura e o formulário começa escuro: sem um fio, os dois
+   blocos derretem num só. */
+#contato { border-top: 1px solid var(--line-soft); }
 
 .form {
   background: var(--surface);
@@ -1167,11 +1145,15 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 
 .field select {
   /* seta desenhada, pra não herdar o widget cinza do sistema */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%230A0A0A' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23F4F2EE' stroke-width='1.6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 16px center;
   padding-right: 42px;
   cursor: pointer;
+}
+/* num bloco claro a seta precisa ser escura, senão some no branco */
+.invert .field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%230A0A0A' stroke-width='1.6'/%3E%3C/svg%3E");
 }
 .field select:invalid { color: var(--fg-faint); }
 
@@ -1183,11 +1165,18 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
 .field textarea:focus {
   outline: none;
   border-color: var(--fg);
-  box-shadow: 0 0 0 3px rgba(10, 10, 10, .1);
+  box-shadow: 0 0 0 3px rgba(244, 242, 238, .13);
 }
+.invert .field input:focus,
+.invert .field select:focus,
+.invert .field textarea:focus { box-shadow: 0 0 0 3px rgba(10, 10, 10, .1); }
+
 .field input:user-invalid,
 .field select:user-invalid,
-.field textarea:user-invalid { border-color: #B4231F; }
+.field textarea:user-invalid { border-color: #D6564F; }
+.invert .field input:user-invalid,
+.invert .field select:user-invalid,
+.invert .field textarea:user-invalid { border-color: #B4231F; }
 
 .hint { font-size: .78rem; color: var(--fg-faint); line-height: 1.5; }
 
@@ -1210,8 +1199,10 @@ h3.display  { font-size: clamp(1.5rem, 3.2vw, 2.2rem); letter-spacing: -0.035em;
   display: none;
 }
 .form__status.is-on { display: block; }
-.form__status.is-ok   { background: rgba(10, 10, 10, .06); border: 1px solid var(--line); color: var(--fg); }
-.form__status.is-err  { background: rgba(180, 35, 31, .08); border: 1px solid rgba(180, 35, 31, .34); color: #8E1B18; }
+.form__status.is-ok   { background: rgba(244, 242, 238, .07); border: 1px solid var(--line); color: var(--fg); }
+.form__status.is-err  { background: rgba(214, 86, 80, .10); border: 1px solid rgba(214, 86, 80, .40); color: #EDA49E; }
+.invert .form__status.is-ok  { background: rgba(10, 10, 10, .06); }
+.invert .form__status.is-err { background: rgba(180, 35, 31, .08); border-color: rgba(180, 35, 31, .34); color: #8E1B18; }
 
 /* --------------------------------------------------------------------------
    Footer
@@ -1394,7 +1385,96 @@ html.intro-on .intro.is-out { opacity: 0; }
   transition: opacity 1s var(--ease) .18s;
 }
 .intro.is-word .intro__sign img { opacity: 1; clip-path: inset(0 0 0 0); }
+.intro:not(.is-live) .intro__sign { visibility: hidden; }
 .intro.is-word .intro__sign p { opacity: 1; }
+
+/* --------------------------------------------------------------- portaria
+   A primeira tela: o convite. É o clique daqui que destrava o áudio no
+   navegador — por isso o som só existe depois dele. */
+.intro__gate {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 3vw, 24px);
+  padding: 24px;
+  text-align: center;
+  animation: introGateIn 1.2s var(--ease) .15s backwards;
+  transition: opacity .55s var(--ease), transform .55s var(--ease);
+}
+@keyframes introGateIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.intro__gate.is-gone {
+  opacity: 0;
+  transform: scale(1.05);
+  pointer-events: none;
+}
+
+.intro__gate img {
+  width: clamp(150px, 22vw, 240px);
+  height: auto;
+  opacity: .95;
+}
+
+.intro__enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 34px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(.9rem, 2.2vw, 1rem);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: introPulse 3.4s var(--ease) 1s infinite;
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.intro__enter .arw { transition: transform .3s var(--ease); }
+.intro__enter:hover { transform: translateY(-2px); }
+.intro__enter:hover .arw { transform: translateX(4px); }
+/* uma respiração lenta: chama o olho sem piscar na cara de ninguém */
+@keyframes introPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 242, 238, 0); }
+  50%      { box-shadow: 0 0 34px 0 rgba(244, 242, 238, .22); }
+}
+
+.intro__gate-meta {
+  margin: -4px 0 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(244, 242, 238, .42);
+}
+.intro__gate-wait { display: none; }
+.intro__gate.is-waiting .intro__gate-on { display: none; }
+.intro__gate.is-waiting .intro__gate-wait { display: inline; animation: introBreathe 1.4s ease-in-out infinite; }
+.intro__gate.is-waiting .intro__enter { opacity: .45; animation: none; pointer-events: none; }
+.intro__gate.is-waiting .intro__quiet { opacity: 0; pointer-events: none; }
+@keyframes introBreathe {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: .85; }
+}
+
+.intro__quiet {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(244, 242, 238, .38);
+  padding: 6px 4px;
+  transition: color .25s var(--ease), opacity .3s var(--ease);
+}
+.intro__quiet:hover { color: rgba(244, 242, 238, .8); }
 
 .intro__skip {
   position: absolute;
@@ -1462,6 +1542,12 @@ html.intro-on .intro.is-out { opacity: 0; }
   0%, 100% { height: 3px; }
   50%      { height: 11px; }
 }
+
+/* Pular e som só fazem sentido com a cena rodando. Precisa vir depois das
+   duas regras acima: mesma especificidade, quem vence é quem está por último. */
+.intro__skip, .intro__sound { display: none; }
+.intro.is-live .intro__skip,
+.intro.is-live .intro__sound { display: inline-flex; }
 
 /* O estouro de luz vive fora da abertura: ele sobrevive ao canvas e entrega
    a página por baixo. */

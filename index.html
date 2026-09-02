@@ -98,6 +98,18 @@
       <p>A gente não segue o rebanho</p>
     </div>
   </div>
+  <div class="intro__gate" id="introGate">
+    <img src="assets/logo/sheper-wordmark-white.png" alt="Sheper" width="1369" height="303">
+    <button class="intro__enter" id="introEnter" type="button">
+      Abrir <span class="arw" aria-hidden="true">&rarr;</span>
+    </button>
+    <p class="intro__gate-meta">
+      <span class="intro__gate-on">com som &middot; 3 segundos</span>
+      <span class="intro__gate-wait">preparando a cena&hellip;</span>
+    </p>
+    <button class="intro__quiet" id="introQuiet" type="button">Entrar em silêncio</button>
+  </div>
+
   <button class="intro__sound" id="introSound" type="button" aria-pressed="false">
     <span class="intro__sound-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <span class="intro__sound-txt">Ativar som</span>
@@ -616,7 +628,7 @@
 <!-- ======================================================================
      FORMULÁRIO
      ====================================================================== -->
-<section class="section invert" id="contato">
+<section class="section" id="contato">
   <div class="wrap contato">
 
     <div class="contato__intro" data-reveal>
@@ -627,24 +639,6 @@
         dois minutos lendo e voltamos com um retorno honesto sobre encaixe, mesmo
         quando a resposta é não.
       </p>
-
-      <ol class="passos">
-        <li>
-          <b>01</b>
-          <h3>Você preenche</h3>
-          <p>Dois minutos. As perguntas são as que a gente precisaria fazer na primeira call de qualquer jeito.</p>
-        </li>
-        <li>
-          <b>02</b>
-          <h3>A gente responde</h3>
-          <p>Em até 24h úteis, com uma leitura direta do momento da marca e se dá pra ajudar agora.</p>
-        </li>
-        <li>
-          <b>03</b>
-          <h3>Conversa de 30 minutos</h3>
-          <p>Se fizer sentido dos dois lados, sentamos pra desenhar conceito, produção e distribuição.</p>
-        </li>
-      </ol>
     </div>
 
     <form class="form" id="leadForm" data-endpoint="https://script.google.com/macros/s/AKfycbw49qlyzQThrZkdiqvZ2eQQJU7pTnqrl3eKbBo96gHFAafwNuRoWSkk-BaqRx2roxPKFA/exec" novalidate data-reveal>
@@ -729,7 +723,7 @@
       </div>
 
       <div class="form__foot">
-        <button class="btn btn--lg btn--dark" type="submit" id="formSubmit">
+        <button class="btn btn--lg" type="submit" id="formSubmit">
           <span class="form__label">Enviar aplicação</span>
           <span class="arw" aria-hidden="true">→</span>
         </button>

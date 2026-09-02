@@ -246,21 +246,62 @@
          gente não consegue confirmar é tratado como falha: é melhor a pessoa
          reenviar (o id acima impede linha duplicada) do que sair achando que
          aplicou quando a linha nunca chegou na planilha. */
-      fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: corpo
-      })
-        .then(function (resposta) { return resposta.json(); })
-        .then(function (resultado) {
-          if (!resultado || resultado.ok !== true) throw new Error('resposta inesperada');
+      var enviar = function () {
+        /* Sem um limite, uma resposta que nunca chega deixa o botão preso em
+           "Enviando" para sempre. */
+        var relogio, abortar;
+        var corte = new Promise(function (_, falhar) {
+          relogio = setTimeout(function () {
+            if (abortar) abortar.abort();
+            falhar(new Error('tempo esgotado'));
+          }, 15000);
+        });
+
+        var opcoes = {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: corpo
+        };
+        if (window.AbortController) {
+          abortar = new AbortController();
+          opcoes.signal = abortar.signal;
+        }
+
+        var ida = fetch(endpoint, opcoes)
+          .then(function (resposta) {
+            return resposta.text().then(function (texto) {
+              var dado = null;
+              try { dado = JSON.parse(texto); } catch (e) {}
+              if (!dado) throw new Error('resposta não era JSON (http ' + resposta.status + ')');
+              if (dado.ok !== true) throw new Error('o Apps Script recusou: ' + (dado.erro || 'sem detalhe'));
+              return dado;
+            });
+          });
+
+        return Promise.race([ida, corte]).then(
+          function (r) { clearTimeout(relogio); return r; },
+          function (e) { clearTimeout(relogio); throw e; }
+        );
+      };
+
+      /* Uma tentativa a mais antes de dizer que falhou: a causa mais comum é
+         um soluço de rede, e o id por envio deixa o reenvio seguro — se a
+         primeira chegou a gravar, a segunda é reconhecida e não duplica. */
+      enviar()
+        .catch(function (primeiro) {
+          if (window.console) console.warn('[sheper] 1ª tentativa falhou:', primeiro.message);
+          return new Promise(function (ok) { setTimeout(ok, 1400); }).then(enviar);
+        })
+        .then(function () {
           travar(false, 'Enviar aplicação');
           form.reset();
           setStatus('ok', 'Recebido. A gente lê e responde em até 24h úteis, no e-mail e no WhatsApp que você deixou.');
         })
-        .catch(function () {
+        .catch(function (erro) {
+          /* Quem cuida do site precisa saber o motivo; quem está aplicando, não. */
+          if (window.console) console.error('[sheper] envio não confirmado:', erro && erro.message, '| endpoint:', endpoint);
           travar(false, 'Enviar aplicação');
-          setStatus('err', 'Não conseguimos enviar agora. Tenta de novo em instantes ou chama a gente no Instagram.');
+          setStatus('err', 'Não conseguimos confirmar o envio. Tenta de novo em instantes ou chama a gente no Instagram — a gente responde por lá também.');
         });
     });
   }
